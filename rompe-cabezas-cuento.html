@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rompecabezas del Cuento Mágico ✨</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&family=Nunito:wght@600;800&display=swap');
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(165deg, #1a0533 0%, #2d1b69 35%, #4a1a6b 65%, #ff6b9d 100%);
+    min-height: 100vh;
+    color: #fff;
+    overflow-x: hidden;
+  }
+  
+  .stars {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0;
+  }
+  .star {
+    position: absolute; background: #fff; border-radius: 50%;
+    animation: twinkle 2.8s infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.2; } 50% { opacity: 1; }
+  }
+  
+  .container {
+    position: relative; z-index: 1;
+    max-width: 920px; margin: 0 auto; padding: 18px; text-align: center;
+  }
+  
+  h1 {
+    font-family: 'Comic Neue', cursive;
+    font-size: 2.4rem;
+    text-shadow: 0 0 25px #ffeaa7, 0 0 50px #fdcb6e;
+    margin: 12px 0 6px;
+  }
+  
+  .subtitle { font-size: 1.1rem; opacity: 0.9; margin-bottom: 14px; }
+  
+  .score-box {
+    background: rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 9px 18px;
+    display: inline-block;
+    margin-bottom: 12px;
+    font-size: 1.15rem;
+    border: 2px solid rgba(255,255,255,0.25);
+  }
+  
+  .story-preview {
+    background: rgba(0,0,0,0.3);
+    border-radius: 18px;
+    padding: 16px;
+    margin: 12px auto 18px;
+    max-width: 700px;
+    font-size: 1.05rem;
+    line-height: 1.5;
+  }
+  
+  .puzzle-area {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-width: 420px;
+    margin: 0 auto 20px;
+  }
+  
+  .piece {
+    aspect-ratio: 1;
+    background: linear-gradient(145deg, #a29bfe, #6c5ce7);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.8rem;
+    cursor: grab;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+    border: 3px solid rgba(255,255,255,0.35);
+    transition: all 0.2s;
+    user-select: none;
+    position: relative;
+  }
+  .piece:active { cursor: grabbing; }
+  .piece:hover { transform: scale(1.05); }
+  .piece.selected {
+    outline: 4px solid #ffeaa7;
+    transform: scale(1.08);
+    z-index: 5;
+  }
+  .piece.correct-pos {
+    background: linear-gradient(145deg, #00b894, #00cec9);
+    pointer-events: none;
+  }
+  
+  .piece-num {
+    position: absolute;
+    bottom: 4px;
+    right: 8px;
+    font-size: 0.75rem;
+    opacity: 0.6;
+  }
+  
+  .btn {
+    background: linear-gradient(145deg, #fd79a8, #e84393);
+    color: white; border: none;
+    padding: 12px 26px; font-size: 1.05rem; font-weight: 800;
+    border-radius: 50px; cursor: pointer; margin: 6px;
+    box-shadow: 0 5px 14px rgba(0,0,0,0.3);
+    font-family: 'Nunito', sans-serif;
+    transition: all 0.2s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-speak { background: linear-gradient(145deg, #74b9ff, #0984e3); }
+  .btn-shuffle { background: linear-gradient(145deg, #a29bfe, #6c5ce7); }
+  
+  .feedback {
+    font-size: 1.35rem; font-weight: 800;
+    margin: 12px 0; min-height: 32px;
+  }
+  .ok { color: #55efc4; }
+  .bad { color: #ff7675; }
+  
+  .instructions {
+    background: rgba(0,0,0,0.25);
+    border-radius: 14px;
+    padding: 12px 16px;
+    margin: 10px auto 14px;
+    max-width: 620px;
+    font-size: 0.98rem;
+  }
+  
+  footer {
+    margin-top: 28px; padding: 14px;
+    font-size: 0.8rem; opacity: 0.7;
+    border-top: 1px solid rgba(255,255,255,0.2);
+  }
+  
+  @media (max-width: 500px) {
+    .puzzle-area { max-width: 320px; gap: 8px; }
+    .piece { font-size: 2.2rem; }
+    h1 { font-size: 1.9rem; }
+  }
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+
+<div class="container">
+  <h1>🧩 Rompecabezas del Cuento 🧩</h1>
+  <p class="subtitle">Ordena las escenas para completar la historia mágica</p>
+  
+  <div class="score-box">⭐ Puntos: <span id="score">0</span> · Movimientos: <span id="moves">0</span></div>
+  
+  <div class="instructions">
+    Toca dos piezas para intercambiarlas. ¡Ordena la historia de izquierda a derecha y de arriba abajo!
+  </div>
+  
+  <div class="story-preview" id="storyPreview">
+    Cargando cuento...
+  </div>
+  
+  <div class="puzzle-area" id="puzzle"></div>
+  
+  <div class="feedback" id="feedback"></div>
+  
+  <div>
+    <button class="btn btn-speak" onclick="speakStory()">🔊 Escuchar cuento</button>
+    <button class="btn btn-shuffle" onclick="shufflePuzzle()">🔀 Mezclar</button>
+    <button class="btn" onclick="checkPuzzle()">✅ Comprobar</button>
+    <button class="btn" onclick="nextStory()">➡️ Otro cuento</button>
+  </div>
+  
+  <footer>
+    Contenido original educativo © 2026 · Creado por Grok<br>
+    Rompecabezas interactivo libre de marcas comerciales. No afiliado a Disney ni a ninguna empresa.
+  </footer>
+</div>
+
+<script>
+const stories = [
+  {
+    title: "La Mariposa y la Estrella",
+    full: "Una mariposa encontró una estrella caída. La ayudó a volver al cielo y juntas brillaron toda la noche.",
+    pieces: [
+      { emoji: "🦋", label: "1. Mariposa" },
+      { emoji: "⭐", label: "2. Estrella" },
+      { emoji: "🤝", label: "3. Ayuda" },
+      { emoji: "🌌", label: "4. Cielo" },
+      { emoji: "✨", label: "5. Brillo" },
+      { emoji: "🌙", label: "6. Noche" },
+      { emoji: "💖", label: "7. Amistad" },
+      { emoji: "🎉", label: "8. Alegría" },
+      { emoji: "🌟", label: "9. Final feliz" }
+    ]
+  },
+  {
+    title: "El Dragón Amable",
+    full: "Un dragón vivía solo en su cueva. Un día un niño le llevó flores. El dragón sonrió y se hicieron amigos para siempre.",
+    pieces: [
+      { emoji: "🐉", label: "1. Dragón" },
+      { emoji: "🏔️", label: "2. Cueva" },
+      { emoji: "👦", label: "3. Niño" },
+      { emoji: "🌸", label: "4. Flores" },
+      { emoji: "😊", label: "5. Sonrisa" },
+      { emoji: "🤗", label: "6. Abrazo" },
+      { emoji: "🏰", label: "7. Castillo" },
+      { emoji: "🌈", label: "8. Arcoíris" },
+      { emoji: "❤️", label: "9. Amigos" }
+    ]
+  },
+  {
+    title: "El Hada de los Libros",
+    full: "Un hada cuidaba los libros mágicos. Un día se perdieron las letras. Con ayuda de los niños las recuperó y todos pudieron leer otra vez.",
+    pieces: [
+      { emoji: "🧚", label: "1. Hada" },
+      { emoji: "📚", label: "2. Libros" },
+      { emoji: "🔤", label: "3. Letras" },
+      { emoji: "😢", label: "4. Problema" },
+      { emoji: "👧", label: "5. Niña" },
+      { emoji: "🔍", label: "6. Buscar" },
+      { emoji: "✨", label: "7. Magia" },
+      { emoji: "📖", label: "8. Leer" },
+      { emoji: "🎊", label: "9. Felices" }
+    ]
+  },
+  {
+    title: "El Castillo de las Sílabas",
+    full: "En un castillo vivían sílabas sueltas. Un mago las unió y formaron palabras hermosas. El reino se llenó de cuentos.",
+    pieces: [
+      { emoji: "🏰", label: "1. Castillo" },
+      { emoji: "🔤", label: "2. Sílabas" },
+      { emoji: "🧙", label: "3. Mago" },
+      { emoji: "🔗", label: "4. Unir" },
+      { emoji: "📝", label: "5. Palabras" },
+      { emoji: "🌸", label: "6. Hermosas" },
+      { emoji: "👑", label: "7. Reino" },
+      { emoji: "📜", label: "8. Cuentos" },
+      { emoji: "🎉", label: "9. Fiesta" }
+    ]
+  }
+];
+
+let currentStory = null;
+let currentOrder = [];
+let selectedIndex = null;
+let score = 0;
+let moves = 0;
+let usedStories = [];
+
+function createStars() {
+  const c = document.getElementById('stars');
+  for (let i = 0; i < 55; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.width = s.style.height = (Math.random()*3+1)+'px';
+    s.style.left = Math.random()*100+'%';
+    s.style.top = Math.random()*100+'%';
+    s.style.animationDelay = Math.random()*2.5+'s';
+    c.appendChild(s);
+  }
+}
+
+function speak(text) {
+  if ('speechSynthesis' in window) {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'es-ES';
+    u.rate = 0.9;
+    u.pitch = 1.05;
+    speechSynthesis.speak(u);
+  }
+}
+
+function speakStory() {
+  if (currentStory) speak(currentStory.title + ". " + currentStory.full);
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function renderPuzzle() {
+  const area = document.getElementById('puzzle');
+  area.innerHTML = '';
+  currentOrder.forEach((idx, pos) => {
+    const piece = currentStory.pieces[idx];
+    const div = document.createElement('div');
+    div.className = 'piece';
+    div.dataset.pos = pos;
+    div.innerHTML = `${piece.emoji}<span class="piece-num">${pos+1}</span>`;
+    div.title = piece.label;
+    div.onclick = () => selectPiece(pos);
+    area.appendChild(div);
+  });
+}
+
+function selectPiece(pos) {
+  const pieces = document.querySelectorAll('.piece');
+  if (selectedIndex === null) {
+    selectedIndex = pos;
+    pieces[pos].classList.add('selected');
+  } else if (selectedIndex === pos) {
+    pieces[pos].classList.remove('selected');
+    selectedIndex = null;
+  } else {
+    // Swap
+    [currentOrder[selectedIndex], currentOrder[pos]] = [currentOrder[pos], currentOrder[selectedIndex]];
+    moves++;
+    document.getElementById('moves').textContent = moves;
+    selectedIndex = null;
+    renderPuzzle();
+    speak("Intercambio hecho");
+  }
+}
+
+function shufflePuzzle() {
+  currentOrder = shuffle([0,1,2,3,4,5,6,7,8]);
+  selectedIndex = null;
+  moves = 0;
+  document.getElementById('moves').textContent = moves;
+  document.getElementById('feedback').textContent = '';
+  renderPuzzle();
+  speak("Piezas mezcladas. ¡Ordena la historia!");
+}
+
+function checkPuzzle() {
+  const isCorrect = currentOrder.every((val, i) => val === i);
+  if (isCorrect) {
+    score += 20;
+    document.getElementById('score').textContent = score;
+    document.getElementById('feedback').textContent = "¡Perfecto! 🌟 ¡Historia completa!";
+    document.getElementById('feedback').className = "feedback ok";
+    document.querySelectorAll('.piece').forEach(p => p.classList.add('correct-pos'));
+    speak("¡Excelente! Completaste el cuento: " + currentStory.title);
+  } else {
+    document.getElementById('feedback').textContent = "Todavía no está en orden... ¡Sigue intentando! 💫";
+    document.getElementById('feedback').className = "feedback bad";
+    speak("Aún no está completo. Revisa el orden de la historia");
+  }
+}
+
+function nextStory() {
+  if (usedStories.length >= stories.length) usedStories = [];
+  let idx;
+  do { idx = Math.floor(Math.random() * stories.length); } while (usedStories.includes(idx));
+  usedStories.push(idx);
+  
+  currentStory = stories[idx];
+  document.getElementById('storyPreview').innerHTML = `<strong>${currentStory.title}</strong><br>${currentStory.full}`;
+  document.getElementById('feedback').textContent = '';
+  selectedIndex = null;
+  moves = 0;
+  document.getElementById('moves').textContent = moves;
+  
+  // Start shuffled
+  currentOrder = shuffle([0,1,2,3,4,5,6,7,8]);
+  renderPuzzle();
+  speak("Nuevo cuento: " + currentStory.title + ". Ordena las escenas.");
+}
+
+createStars();
+nextStory();
+</script>
+</body>
+</html>
